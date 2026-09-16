@@ -5,10 +5,12 @@ import {
   chargeFromMeasurement,
   chargeInElementaryUnits,
   createRandomDrop,
+  nearestElectronCount,
   dropVelocity,
   radiusFromFallSpeed,
 } from "./physics.js";
 import { createApparatus } from "./apparatus.js";
+import { createChargeChart } from "./chart.js";
 
 const START_POSITION = 1e-3;
 const GATE_START = 1.5e-3;
@@ -36,9 +38,14 @@ const elements = {
   driftSpeed: document.getElementById("drift-speed"),
   charge: document.getElementById("charge"),
   chargeUnits: document.getElementById("charge-units"),
+  estimatedCharge: document.getElementById("estimated-charge"),
+  dropCount: document.getElementById("drop-count"),
+  resultsBody: document.getElementById("results-body"),
+  clearResults: document.getElementById("clear-results"),
 };
 
 const apparatus = createApparatus(document.getElementById("apparatus"));
+const chart = createChargeChart(document.getElementById("chart"), document.getElementById("chart-tooltip"));
 
 const state = {
   drop: null,
@@ -109,16 +116,49 @@ function newDrop() {
   renderReadouts();
 }
 
+function estimateElementaryCharge(measurements) {
+  const total = measurements.reduce((sum, measurement) => sum + measurement.charge / nearestElectronCount(measurement.charge), 0);
+  return total / measurements.length;
+}
+
+function renderResults() {
+  const measurements = state.measurements;
+  elements.dropCount.textContent = String(measurements.length);
+  elements.estimatedCharge.textContent = measurements.length === 0
+    ? "—"
+    : `${(estimateElementaryCharge(measurements) * 1e19).toFixed(3)} × 10⁻¹⁹ C`;
+  elements.resultsBody.replaceChildren(...measurements.map((measurement) => {
+    const row = document.createElement("tr");
+    const cells = [
+      measurement.index,
+      `${(measurement.fallSpeed * 1e6).toFixed(1)} µm/s`,
+      `${(measurement.radius * 1e6).toFixed(2)} µm`,
+      `${Math.round(measurement.voltage)} V`,
+      (measurement.charge * 1e19).toFixed(2),
+      chargeInElementaryUnits(measurement.charge).toFixed(2),
+    ];
+    for (const value of cells) {
+      const cell = document.createElement("td");
+      cell.textContent = String(value);
+      row.appendChild(cell);
+    }
+    return row;
+  }));
+  chart.render(measurements);
+}
+
 function recordMeasurement() {
   const voltage = appliedVoltage();
   const charge = chargeFromMeasurement({ fallSpeed: state.measuredFallSpeed, voltage });
   state.measurements.push({
+    index: state.measurements.length + 1,
     fallSpeed: state.measuredFallSpeed,
     radius: radiusFromFallSpeed(state.measuredFallSpeed),
     voltage,
     charge,
   });
   setStatus(`Recorded ${chargeInElementaryUnits(charge).toFixed(2)} e. Get a new drop to repeat the measurement.`);
+  renderResults();
 }
 
 function updateTiming(previousPosition, position) {
@@ -180,8 +220,13 @@ elements.voltageDown.addEventListener("click", () => changeVoltage(-1));
 elements.voltageUp.addEventListener("click", () => changeVoltage(1));
 elements.newDrop.addEventListener("click", newDrop);
 elements.record.addEventListener("click", recordMeasurement);
+elements.clearResults.addEventListener("click", () => {
+  state.measurements = [];
+  renderResults();
+});
 
 apparatus.setGatePositions(GATE_START, GATE_END);
 renderApparatus();
 renderReadouts();
+renderResults();
 requestAnimationFrame(animationFrame);
