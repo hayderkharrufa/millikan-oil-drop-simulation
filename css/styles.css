@@ -1,0 +1,329 @@
+:root {
+  color-scheme: light dark;
+  --page: #f3f5f8;
+  --panel: #ffffff;
+  --panel-border: #dde2ea;
+  --text: #1c2330;
+  --muted: #5b6575;
+  --accent: #1f5fbf;
+  --accent-text: #ffffff;
+  --button: #eef1f6;
+  --button-hover: #e1e6ee;
+  --chamber: #10151c;
+  --reticle: rgba(255, 255, 255, 0.18);
+  --gate: #7f8b9c;
+  --gate-active: #4da3ff;
+  --plate: #9aa3ae;
+  --plate-sign: #1c2330;
+  --drop: #ffd166;
+  --field-arrow: #4da3ff;
+  --wire: #2a2f37;
+  --supply: #39414d;
+  --supply-reading: #6dff8a;
+  --balanced: #1f9d55;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #11151b;
+    --panel: #1a1f27;
+    --panel-border: #2b323d;
+    --text: #e6e9ee;
+    --muted: #9aa3b0;
+    --accent: #4d8ef0;
+    --button: #252c36;
+    --button-hover: #2f3743;
+    --chamber: #0a0e13;
+    --plate: #78828e;
+    --plate-sign: #e6e9ee;
+    --wire: #0b0d10;
+    --supply: #2b323c;
+    --balanced: #45c07d;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif;
+  line-height: 1.5;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.page-header,
+.lab,
+.page-footer {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 24px;
+  padding-bottom: 16px;
+}
+
+.page-header .button {
+  flex-shrink: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.9rem);
+}
+
+.lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.field--switch,
+.field--fine {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+label {
+  font-weight: 600;
+}
+
+select,
+.button {
+  font: inherit;
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--page);
+}
+
+.button {
+  padding: 10px 12px;
+  background: var(--button);
+  cursor: pointer;
+}
+
+.button:not(:disabled):hover {
+  background: var(--button-hover);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.button--small {
+  padding: 6px 10px;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.voltage-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.voltage-display {
+  min-width: 62px;
+  text-align: end;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.readouts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 18px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--panel-border);
+}
+
+.readouts dt {
+  color: var(--muted);
+}
+
+.readouts dd {
+  margin: 0;
+  text-align: end;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.status {
+  min-height: 3em;
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
+.status--balanced {
+  color: var(--balanced);
+  font-weight: 600;
+}
+
+.apparatus {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 62vh;
+  direction: ltr;
+}
+
+.chamber {
+  fill: var(--chamber);
+}
+
+.reticle line {
+  stroke: var(--reticle);
+  stroke-width: 1;
+  stroke-dasharray: 4 6;
+}
+
+.gate line {
+  stroke: var(--gate);
+  stroke-width: 1.5;
+}
+
+.gate-label {
+  fill: var(--gate);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gate--active line {
+  stroke: var(--gate-active);
+  stroke-width: 2;
+}
+
+.gate--active .gate-label {
+  fill: var(--gate-active);
+}
+
+.plate-bar {
+  fill: var(--plate);
+}
+
+.plate-sign {
+  fill: var(--plate-sign);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.drop {
+  fill: var(--drop);
+}
+
+.field-arrows path {
+  stroke: var(--field-arrow);
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wire {
+  stroke: var(--wire);
+  stroke-width: 3;
+  fill: none;
+}
+
+.supply-body {
+  fill: var(--supply);
+}
+
+.supply-reading {
+  fill: var(--supply-reading);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 14px;
+}
+
+.page-footer {
+  padding-top: 20px;
+  padding-bottom: 32px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.page-footer a {
+  color: var(--accent);
+}
+
+@media (max-width: 760px) {
+  .lab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .field {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .buttons {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

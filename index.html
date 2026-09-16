@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Millikan Oil Drop Simulation</title>
+  <meta name="description" content="Interactive Millikan oil drop experiment: measure the fall speed of a charged oil drop, balance it with an electric field, and find its charge in multiples of the elementary charge.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <h1>Millikan Oil Drop Simulation</h1>
+  </header>
+
+  <main class="lab">
+    <section class="panel apparatus-panel" aria-labelledby="apparatus-heading">
+      <h2 id="apparatus-heading" class="visually-hidden">Apparatus</h2>
+      <svg id="apparatus" class="apparatus" viewBox="0 0 340 400" role="img" aria-label="An oil drop between two charged parallel plates, with timing lines A and B and a voltage supply"></svg>
+      <p id="status" class="status" role="status" aria-live="polite">Press New Drop to begin.</p>
+    </section>
+
+    <section class="panel controls" aria-labelledby="controls-heading">
+      <h2 id="controls-heading" class="visually-hidden">Controls</h2>
+
+      <div class="field field--switch">
+        <label class="checkbox" for="field-on">
+          <input type="checkbox" id="field-on">
+          <span>Electric field on</span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label for="voltage">Plate voltage</label>
+        <div class="voltage-control">
+          <input type="range" id="voltage" min="0" max="600" step="1" value="0">
+          <output id="voltage-display" class="voltage-display">0 V</output>
+        </div>
+      </div>
+
+      <div class="field field--fine">
+        <button type="button" id="voltage-down" class="button button--small">−1 V</button>
+        <button type="button" id="voltage-up" class="button button--small">+1 V</button>
+      </div>
+
+      <dl class="readouts">
+        <dt>Fall time (A to B)</dt>
+        <dd id="fall-time">—</dd>
+        <dt>Fall speed</dt>
+        <dd id="fall-speed">—</dd>
+        <dt>Drop radius</dt>
+        <dd id="drop-radius">—</dd>
+        <dt>Drift speed</dt>
+        <dd id="drift-speed">—</dd>
+        <dt>Charge q</dt>
+        <dd id="charge">—</dd>
+        <dt>q / e</dt>
+        <dd id="charge-units">—</dd>
+      </dl>
+
+      <div class="buttons">
+        <button type="button" id="new-drop" class="button button--primary">New Drop</button>
+        <button type="button" id="record" class="button" disabled>Record Measurement</button>
+      </div>
+
+      <div class="field">
+        <label for="simulation-speed">Simulation speed</label>
+        <select id="simulation-speed">
+          <option value="1">1×</option>
+          <option value="2">2×</option>
+          <option value="5">5×</option>
+        </select>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <p><a href="https://github.com/hayderkharrufa/millikan-oil-drop-simulation">Source on GitHub</a></p>
+  </footer>
+</body>
+</html>
