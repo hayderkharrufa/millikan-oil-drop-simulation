@@ -21,13 +21,9 @@ function axisUnits(measurements) {
   return Math.max(MIN_AXIS_UNITS, Math.ceil(highest + 0.5));
 }
 
-export function createChargeChart(svg, tooltip) {
+export function createChargeChart(svg, tooltip, formatTooltip) {
   function showTooltip(measurement, x, y) {
-    tooltip.innerHTML = tooltip.dataset.template
-      .replaceAll("{index}", measurement.index)
-      .replaceAll("{charge}", (measurement.charge * 1e19).toFixed(2))
-      .replaceAll("{units}", chargeInElementaryUnits(measurement.charge).toFixed(2))
-      .replaceAll("{voltage}", Math.round(measurement.voltage));
+    tooltip.textContent = formatTooltip(measurement);
     tooltip.hidden = false;
     const bounds = svg.getBoundingClientRect();
     const scale = bounds.width / CHART_WIDTH;
