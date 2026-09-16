@@ -73,6 +73,34 @@
         </select>
       </div>
     </section>
+    <section class="panel results" aria-labelledby="results-heading">
+      <h2 id="results-heading">Recorded charges</h2>
+      <p class="hero">
+        <output id="estimated-charge" class="hero__value">—</output>
+        <span class="hero__label">estimate of e from <output id="drop-count">0</output> drops</span>
+      </p>
+      <div class="chart-area">
+        <svg id="chart" class="chart" viewBox="0 0 640 200" role="img" aria-label="Each recorded charge plotted against multiples of the elementary charge"></svg>
+        <div id="chart-tooltip" class="chart-tooltip" role="presentation" hidden data-template="Drop {index}: {charge} × 10⁻¹⁹ C = {units} e at {voltage} V"></div>
+      </div>
+      <table class="results-table">
+        <caption class="visually-hidden">Recorded measurements</caption>
+        <thead>
+          <tr>
+            <th scope="col">Drop</th>
+            <th scope="col">Fall speed</th>
+            <th scope="col">Radius</th>
+            <th scope="col">Voltage</th>
+            <th scope="col">q (× 10⁻¹⁹ C)</th>
+            <th scope="col">q / e</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+      <div class="buttons">
+        <button type="button" id="clear-results" class="button">Clear Results</button>
+      </div>
+    </section>
   </main>
 
   <footer class="page-footer">
