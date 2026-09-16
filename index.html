@@ -11,28 +11,29 @@
 </head>
 <body>
   <header class="page-header">
-    <h1>Millikan Oil Drop Simulation</h1>
+    <h1 data-i18n="page.title">Millikan Oil Drop Simulation</h1>
+    <button type="button" id="toggle-language" class="button" data-i18n="language.switch">العربية</button>
   </header>
 
   <main class="lab">
     <section class="panel apparatus-panel" aria-labelledby="apparatus-heading">
-      <h2 id="apparatus-heading" class="visually-hidden">Apparatus</h2>
-      <svg id="apparatus" class="apparatus" viewBox="0 0 340 400" role="img" aria-label="An oil drop between two charged parallel plates, with timing lines A and B and a voltage supply"></svg>
-      <p id="status" class="status" role="status" aria-live="polite">Press New Drop to begin.</p>
+      <h2 id="apparatus-heading" class="visually-hidden" data-i18n="apparatus.heading">Apparatus</h2>
+      <svg id="apparatus" class="apparatus" viewBox="0 0 340 400" role="img" data-i18n-aria-label="apparatus.description" aria-label="An oil drop between two charged parallel plates, with timing lines A and B and a voltage supply"></svg>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
 
     <section class="panel controls" aria-labelledby="controls-heading">
-      <h2 id="controls-heading" class="visually-hidden">Controls</h2>
+      <h2 id="controls-heading" class="visually-hidden" data-i18n="controls.heading">Controls</h2>
 
       <div class="field field--switch">
         <label class="checkbox" for="field-on">
           <input type="checkbox" id="field-on">
-          <span>Electric field on</span>
+          <span data-i18n="field.on">Electric field on</span>
         </label>
       </div>
 
       <div class="field">
-        <label for="voltage">Plate voltage</label>
+        <label for="voltage" data-i18n="voltage.label">Plate voltage</label>
         <div class="voltage-control">
           <input type="range" id="voltage" min="0" max="600" step="1" value="0">
           <output id="voltage-display" class="voltage-display">0 V</output>
@@ -40,33 +41,33 @@
       </div>
 
       <div class="field field--fine">
-        <button type="button" id="voltage-down" class="button button--small">−1 V</button>
-        <button type="button" id="voltage-up" class="button button--small">+1 V</button>
+        <button type="button" id="voltage-down" class="button button--small" dir="ltr">−1 V</button>
+        <button type="button" id="voltage-up" class="button button--small" dir="ltr">+1 V</button>
       </div>
 
       <dl class="readouts">
-        <dt>Fall time (A to B)</dt>
+        <dt data-i18n="readout.fallTime">Fall time (A to B)</dt>
         <dd id="fall-time">—</dd>
-        <dt>Fall speed</dt>
+        <dt data-i18n="readout.fallSpeed">Fall speed</dt>
         <dd id="fall-speed">—</dd>
-        <dt>Drop radius</dt>
+        <dt data-i18n="readout.radius">Drop radius</dt>
         <dd id="drop-radius">—</dd>
-        <dt>Drift speed</dt>
+        <dt data-i18n="readout.drift">Drift speed</dt>
         <dd id="drift-speed">—</dd>
-        <dt>Charge q</dt>
+        <dt data-i18n="readout.charge">Charge q</dt>
         <dd id="charge">—</dd>
         <dt>q / e</dt>
         <dd id="charge-units">—</dd>
       </dl>
 
       <div class="buttons">
-        <button type="button" id="new-drop" class="button button--primary">New Drop</button>
-        <button type="button" id="record" class="button" disabled>Record Measurement</button>
+        <button type="button" id="new-drop" class="button button--primary" data-i18n="button.newDrop">New Drop</button>
+        <button type="button" id="record" class="button" data-i18n="button.record" disabled>Record Measurement</button>
       </div>
 
       <div class="field">
-        <label for="simulation-speed">Simulation speed</label>
-        <select id="simulation-speed">
+        <label for="simulation-speed" data-i18n="speed.label">Simulation speed</label>
+        <select id="simulation-speed" dir="ltr">
           <option value="1">1×</option>
           <option value="2">2×</option>
           <option value="5">5×</option>
@@ -74,31 +75,31 @@
       </div>
     </section>
     <section class="panel results" aria-labelledby="results-heading">
-      <h2 id="results-heading">Recorded charges</h2>
+      <h2 id="results-heading" data-i18n="results.heading">Recorded charges</h2>
       <p class="hero">
         <output id="estimated-charge" class="hero__value">—</output>
-        <span class="hero__label">estimate of e from <output id="drop-count">0</output> drops</span>
+        <span id="estimate-label" class="hero__label"></span>
       </p>
       <div class="chart-area">
-        <svg id="chart" class="chart" viewBox="0 0 640 200" role="img" aria-label="Each recorded charge plotted against multiples of the elementary charge"></svg>
-        <div id="chart-tooltip" class="chart-tooltip" role="presentation" hidden data-template="Drop {index}: {charge} × 10⁻¹⁹ C = {units} e at {voltage} V"></div>
+        <svg id="chart" class="chart" viewBox="0 0 640 200" role="img" data-i18n-aria-label="chart.description" aria-label="Each recorded charge plotted against multiples of the elementary charge"></svg>
+        <div id="chart-tooltip" class="chart-tooltip" role="presentation" hidden></div>
       </div>
       <table class="results-table">
-        <caption class="visually-hidden">Recorded measurements</caption>
+        <caption class="visually-hidden" data-i18n="results.caption">Recorded measurements</caption>
         <thead>
           <tr>
-            <th scope="col">Drop</th>
-            <th scope="col">Fall speed</th>
-            <th scope="col">Radius</th>
-            <th scope="col">Voltage</th>
-            <th scope="col">q (× 10⁻¹⁹ C)</th>
+            <th scope="col" data-i18n="table.drop">Drop</th>
+            <th scope="col" data-i18n="table.fallSpeed">Fall speed</th>
+            <th scope="col" data-i18n="table.radius">Radius</th>
+            <th scope="col" data-i18n="table.voltage">Voltage</th>
+            <th scope="col" data-i18n="table.charge">q (× 10⁻¹⁹ C)</th>
             <th scope="col">q / e</th>
           </tr>
         </thead>
         <tbody id="results-body"></tbody>
       </table>
       <div class="buttons">
-        <button type="button" id="clear-results" class="button">Clear Results</button>
+        <button type="button" id="clear-results" class="button" data-i18n="button.clear">Clear Results</button>
       </div>
     </section>
   </main>

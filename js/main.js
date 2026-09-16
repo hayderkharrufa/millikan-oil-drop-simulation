@@ -11,6 +11,7 @@ import {
 } from "./physics.js";
 import { createApparatus } from "./apparatus.js";
 import { createChargeChart } from "./chart.js";
+import { initializeLanguage, onLanguageChange, toggleLanguage, translate } from "./i18n.js";
 
 const START_POSITION = 1e-3;
 const GATE_START = 1.5e-3;
@@ -39,13 +40,14 @@ const elements = {
   charge: document.getElementById("charge"),
   chargeUnits: document.getElementById("charge-units"),
   estimatedCharge: document.getElementById("estimated-charge"),
-  dropCount: document.getElementById("drop-count"),
+  estimateLabel: document.getElementById("estimate-label"),
+  toggleLanguage: document.getElementById("toggle-language"),
   resultsBody: document.getElementById("results-body"),
   clearResults: document.getElementById("clear-results"),
 };
 
 const apparatus = createApparatus(document.getElementById("apparatus"));
-const chart = createChargeChart(document.getElementById("chart"), document.getElementById("chart-tooltip"));
+const chart = createChargeChart(document.getElementById("chart"), document.getElementById("chart-tooltip"), formatTooltip);
 
 const state = {
   drop: null,
@@ -54,6 +56,7 @@ const state = {
   timing: { startedAt: null, fallTime: null },
   measuredFallSpeed: null,
   simulationSeconds: 0,
+  statusMessage: { key: "status.start" },
   lastFrameAt: performance.now(),
   measurements: [],
 };
@@ -68,26 +71,45 @@ function isBalanced() {
     && Math.abs(state.velocity) < BALANCE_SPEED_FRACTION * state.measuredFallSpeed;
 }
 
-function formatMicrometresPerSecond(speed) {
-  return `${(speed * 1e6).toFixed(1)} µm/s`;
+function formatUnit(key, value) {
+  return translate(`unit.${key}`, { value });
 }
 
-function setStatus(message) {
-  elements.status.textContent = message;
+function formatMicrometresPerSecond(speed) {
+  return formatUnit("micrometresPerSecond", (speed * 1e6).toFixed(1));
+}
+
+function formatTooltip(measurement) {
+  return translate("chart.tooltip", {
+    index: measurement.index,
+    charge: (measurement.charge * 1e19).toFixed(2),
+    units: chargeInElementaryUnits(measurement.charge).toFixed(2),
+    voltage: Math.round(measurement.voltage),
+  });
+}
+
+function renderStatus() {
+  const { key, params } = state.statusMessage;
+  elements.status.textContent = translate(key, params);
+}
+
+function setStatus(key, params) {
+  state.statusMessage = { key, params };
+  renderStatus();
 }
 
 function renderReadouts() {
   const { timing, measuredFallSpeed } = state;
-  elements.fallTime.textContent = timing.fallTime === null ? "—" : `${timing.fallTime.toFixed(2)} s`;
+  elements.fallTime.textContent = timing.fallTime === null ? "—" : formatUnit("seconds", timing.fallTime.toFixed(2));
   elements.fallSpeed.textContent = measuredFallSpeed === null ? "—" : formatMicrometresPerSecond(measuredFallSpeed);
   elements.dropRadius.textContent = measuredFallSpeed === null
     ? "—"
-    : `${(radiusFromFallSpeed(measuredFallSpeed) * 1e6).toFixed(2)} µm`;
+    : formatUnit("micrometres", (radiusFromFallSpeed(measuredFallSpeed) * 1e6).toFixed(2));
   elements.driftSpeed.textContent = state.drop === null ? "—" : formatMicrometresPerSecond(Math.abs(state.velocity));
 
   const balanced = isBalanced();
   const charge = balanced ? chargeFromMeasurement({ fallSpeed: measuredFallSpeed, voltage: appliedVoltage() }) : null;
-  elements.charge.textContent = charge === null ? "—" : `${(charge * 1e19).toFixed(2)} × 10⁻¹⁹ C`;
+  elements.charge.textContent = charge === null ? "—" : formatUnit("coulombs", (charge * 1e19).toFixed(2));
   elements.chargeUnits.textContent = charge === null ? "—" : chargeInElementaryUnits(charge).toFixed(2);
   elements.record.disabled = !balanced;
 }
@@ -111,7 +133,7 @@ function newDrop() {
   state.timing = { startedAt: null, fallTime: null };
   state.measuredFallSpeed = null;
   elements.fieldOn.checked = false;
-  setStatus("Watch the drop fall from line A to line B with the field off.");
+  setStatus("status.falling");
   renderApparatus();
   renderReadouts();
 }
@@ -123,17 +145,17 @@ function estimateElementaryCharge(measurements) {
 
 function renderResults() {
   const measurements = state.measurements;
-  elements.dropCount.textContent = String(measurements.length);
+  elements.estimateLabel.textContent = translate("results.estimate", { count: measurements.length });
   elements.estimatedCharge.textContent = measurements.length === 0
     ? "—"
-    : `${(estimateElementaryCharge(measurements) * 1e19).toFixed(3)} × 10⁻¹⁹ C`;
+    : formatUnit("coulombs", (estimateElementaryCharge(measurements) * 1e19).toFixed(3));
   elements.resultsBody.replaceChildren(...measurements.map((measurement) => {
     const row = document.createElement("tr");
     const cells = [
       measurement.index,
-      `${(measurement.fallSpeed * 1e6).toFixed(1)} µm/s`,
-      `${(measurement.radius * 1e6).toFixed(2)} µm`,
-      `${Math.round(measurement.voltage)} V`,
+      formatMicrometresPerSecond(measurement.fallSpeed),
+      formatUnit("micrometres", (measurement.radius * 1e6).toFixed(2)),
+      formatUnit("volts", Math.round(measurement.voltage)),
       (measurement.charge * 1e19).toFixed(2),
       chargeInElementaryUnits(measurement.charge).toFixed(2),
     ];
@@ -157,7 +179,7 @@ function recordMeasurement() {
     voltage,
     charge,
   });
-  setStatus(`Recorded ${chargeInElementaryUnits(charge).toFixed(2)} e. Get a new drop to repeat the measurement.`);
+  setStatus("status.recorded", { units: chargeInElementaryUnits(charge).toFixed(2) });
   renderResults();
 }
 
@@ -166,13 +188,13 @@ function updateTiming(previousPosition, position) {
   const timing = state.timing;
   if (timing.startedAt === null && previousPosition < GATE_START && position >= GATE_START) {
     timing.startedAt = state.simulationSeconds;
-    setStatus("Timing the drop between the lines.");
+    setStatus("status.timing");
     return;
   }
   if (timing.startedAt !== null && timing.fallTime === null && previousPosition < GATE_END && position >= GATE_END) {
     timing.fallTime = state.simulationSeconds - timing.startedAt;
     state.measuredFallSpeed = GATE_SEPARATION / timing.fallTime;
-    setStatus("Fall speed measured. Switch the field on and adjust the voltage until the drop stops moving.");
+    setStatus("status.measured");
   }
 }
 
@@ -186,7 +208,7 @@ function moveDrop(elapsedSeconds) {
   state.positionMetres = Math.min(lowest, Math.max(0, position));
   updateTiming(previousPosition, state.positionMetres);
   if (state.positionMetres === lowest && state.velocity < 0) {
-    setStatus("The drop has settled on the lower plate. Raise the voltage to lift it back up.");
+    setStatus("status.settled");
   }
 }
 
@@ -200,7 +222,7 @@ function animationFrame(now) {
     renderApparatus();
     renderReadouts();
     const balanced = isBalanced();
-    if (balanced) setStatus("The drop is balanced. Record the measurement.");
+    if (balanced) setStatus("status.balanced");
     elements.status.classList.toggle("status--balanced", balanced);
   }
   requestAnimationFrame(animationFrame);
@@ -211,8 +233,20 @@ function changeVoltage(step) {
   elements.voltage.dispatchEvent(new Event("input"));
 }
 
+function renderVoltageDisplay() {
+  elements.voltageDisplay.textContent = formatUnit("volts", elements.voltage.value);
+}
+
+function renderLanguage(language) {
+  elements.toggleLanguage.lang = language === "en" ? "ar" : "en";
+  renderVoltageDisplay();
+  renderStatus();
+  renderReadouts();
+  renderResults();
+}
+
 elements.voltage.addEventListener("input", () => {
-  elements.voltageDisplay.textContent = `${elements.voltage.value} V`;
+  renderVoltageDisplay();
   renderApparatus();
 });
 elements.fieldOn.addEventListener("change", renderApparatus);
@@ -220,13 +254,14 @@ elements.voltageDown.addEventListener("click", () => changeVoltage(-1));
 elements.voltageUp.addEventListener("click", () => changeVoltage(1));
 elements.newDrop.addEventListener("click", newDrop);
 elements.record.addEventListener("click", recordMeasurement);
+elements.toggleLanguage.addEventListener("click", toggleLanguage);
 elements.clearResults.addEventListener("click", () => {
   state.measurements = [];
   renderResults();
 });
 
 apparatus.setGatePositions(GATE_START, GATE_END);
+onLanguageChange(renderLanguage);
+initializeLanguage();
 renderApparatus();
-renderReadouts();
-renderResults();
 requestAnimationFrame(animationFrame);

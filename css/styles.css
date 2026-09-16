@@ -359,6 +359,7 @@ input[type="range"] {
 
 .chart-area {
   position: relative;
+  direction: ltr;
 }
 
 .chart {
@@ -408,6 +409,7 @@ input[type="range"] {
   color: var(--text);
   font-size: 0.85rem;
   white-space: nowrap;
+  unicode-bidi: plaintext;
   pointer-events: none;
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
 }
