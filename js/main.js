@@ -56,7 +56,8 @@ const state = {
   timing: { startedAt: null, fallTime: null },
   measuredFallSpeed: null,
   simulationSeconds: 0,
-  statusMessage: { key: "status.start" },
+  recordedUnits: null,
+  restingOn: null,
   lastFrameAt: performance.now(),
   measurements: [],
 };
@@ -69,6 +70,25 @@ function isBalanced() {
   return state.measuredFallSpeed !== null
     && elements.fieldOn.checked
     && Math.abs(state.velocity) < BALANCE_SPEED_FRACTION * state.measuredFallSpeed;
+}
+
+function canRecord() {
+  return isBalanced() && state.recordedUnits === null;
+}
+
+function statusMessage() {
+  if (state.drop === null) return { key: "status.start" };
+  if (state.recordedUnits !== null) return { key: "status.recorded", params: { units: state.recordedUnits } };
+  if (state.measuredFallSpeed === null) {
+    if (elements.fieldOn.checked) return { key: "status.fieldOnTooEarly" };
+    if (state.timing.startedAt !== null) return { key: "status.timing" };
+    if (state.restingOn !== null || state.positionMetres >= GATE_START) return { key: "status.liftDrop" };
+    return { key: "status.falling" };
+  }
+  if (!elements.fieldOn.checked) return { key: "status.measured" };
+  if (isBalanced()) return { key: "status.balanced" };
+  if (state.restingOn === "top") return { key: "status.settledTop" };
+  return state.velocity < 0 ? { key: "status.increaseVoltage" } : { key: "status.decreaseVoltage" };
 }
 
 function formatUnit(key, value) {
@@ -89,13 +109,9 @@ function formatTooltip(measurement) {
 }
 
 function renderStatus() {
-  const { key, params } = state.statusMessage;
+  const { key, params } = statusMessage();
   elements.status.textContent = translate(key, params);
-}
-
-function setStatus(key, params) {
-  state.statusMessage = { key, params };
-  renderStatus();
+  elements.status.classList.toggle("status--balanced", key === "status.balanced");
 }
 
 function renderReadouts() {
@@ -105,13 +121,20 @@ function renderReadouts() {
   elements.dropRadius.textContent = measuredFallSpeed === null
     ? "—"
     : formatUnit("micrometres", (radiusFromFallSpeed(measuredFallSpeed) * 1e6).toFixed(2));
-  elements.driftSpeed.textContent = state.drop === null ? "—" : formatMicrometresPerSecond(Math.abs(state.velocity));
+  elements.driftSpeed.textContent = state.drop === null
+    ? "—"
+    : `${driftArrow()} ${formatMicrometresPerSecond(Math.abs(state.velocity))}`;
 
   const balanced = isBalanced();
   const charge = balanced ? chargeFromMeasurement({ fallSpeed: measuredFallSpeed, voltage: appliedVoltage() }) : null;
   elements.charge.textContent = charge === null ? "—" : formatUnit("coulombs", (charge * 1e19).toFixed(2));
   elements.chargeUnits.textContent = charge === null ? "—" : chargeInElementaryUnits(charge).toFixed(2);
-  elements.record.disabled = !balanced;
+  elements.record.disabled = !canRecord();
+}
+
+function driftArrow() {
+  if (isBalanced()) return "=";
+  return state.velocity < 0 ? "↓" : "↑";
 }
 
 function renderApparatus() {
@@ -126,16 +149,22 @@ function renderApparatus() {
   apparatus.setTimingActive("end", state.timing.fallTime !== null);
 }
 
+function resetTiming() {
+  state.timing = { startedAt: null, fallTime: null };
+  state.measuredFallSpeed = null;
+}
+
 function newDrop() {
   state.drop = createRandomDrop();
   state.positionMetres = START_POSITION;
   state.velocity = 0;
-  state.timing = { startedAt: null, fallTime: null };
-  state.measuredFallSpeed = null;
+  state.restingOn = null;
+  state.recordedUnits = null;
+  resetTiming();
   elements.fieldOn.checked = false;
-  setStatus("status.falling");
   renderApparatus();
   renderReadouts();
+  renderStatus();
 }
 
 function estimateElementaryCharge(measurements) {
@@ -179,22 +208,27 @@ function recordMeasurement() {
     voltage,
     charge,
   });
-  setStatus("status.recorded", { units: chargeInElementaryUnits(charge).toFixed(2) });
+  state.recordedUnits = chargeInElementaryUnits(charge).toFixed(2);
   renderResults();
+  renderReadouts();
+  renderStatus();
+}
+
+function crossedDownwards(gate, previousPosition, position) {
+  return previousPosition < gate && position >= gate;
 }
 
 function updateTiming(previousPosition, position) {
   if (elements.fieldOn.checked) return;
   const timing = state.timing;
-  if (timing.startedAt === null && previousPosition < GATE_START && position >= GATE_START) {
-    timing.startedAt = state.simulationSeconds;
-    setStatus("status.timing");
+  if (crossedDownwards(GATE_START, previousPosition, position)) {
+    resetTiming();
+    state.timing.startedAt = state.simulationSeconds;
     return;
   }
-  if (timing.startedAt !== null && timing.fallTime === null && previousPosition < GATE_END && position >= GATE_END) {
+  if (timing.startedAt !== null && timing.fallTime === null && crossedDownwards(GATE_END, previousPosition, position)) {
     timing.fallTime = state.simulationSeconds - timing.startedAt;
     state.measuredFallSpeed = GATE_SEPARATION / timing.fallTime;
-    setStatus("status.measured");
   }
 }
 
@@ -205,11 +239,12 @@ function moveDrop(elapsedSeconds) {
   const previousPosition = state.positionMetres;
   const position = previousPosition - state.velocity * elapsedSeconds;
   const lowest = PLATE_SEPARATION - drop.radius;
-  state.positionMetres = Math.min(lowest, Math.max(0, position));
+  const highest = drop.radius;
+  state.positionMetres = Math.min(lowest, Math.max(highest, position));
   updateTiming(previousPosition, state.positionMetres);
-  if (state.positionMetres === lowest && state.velocity < 0) {
-    setStatus("status.settled");
-  }
+  if (state.positionMetres === lowest && state.velocity < 0) state.restingOn = "bottom";
+  else if (state.positionMetres === highest && state.velocity > 0) state.restingOn = "top";
+  else state.restingOn = null;
 }
 
 function animationFrame(now) {
@@ -221,15 +256,14 @@ function animationFrame(now) {
     moveDrop(elapsedSeconds);
     renderApparatus();
     renderReadouts();
-    const balanced = isBalanced();
-    if (balanced) setStatus("status.balanced");
-    elements.status.classList.toggle("status--balanced", balanced);
+    renderStatus();
   }
   requestAnimationFrame(animationFrame);
 }
 
 function changeVoltage(step) {
-  elements.voltage.value = String(Math.min(600, Math.max(0, Number(elements.voltage.value) + step)));
+  const highest = Number(elements.voltage.max);
+  elements.voltage.value = String(Math.min(highest, Math.max(0, Number(elements.voltage.value) + step)));
   elements.voltage.dispatchEvent(new Event("input"));
 }
 
@@ -241,6 +275,7 @@ function renderLanguage(language) {
   elements.toggleLanguage.lang = language === "en" ? "ar" : "en";
   renderVoltageDisplay();
   renderStatus();
+  renderResults();
   renderReadouts();
   renderResults();
 }
@@ -249,7 +284,12 @@ elements.voltage.addEventListener("input", () => {
   renderVoltageDisplay();
   renderApparatus();
 });
-elements.fieldOn.addEventListener("change", renderApparatus);
+elements.fieldOn.addEventListener("change", () => {
+  if (state.measuredFallSpeed === null) resetTiming();
+  renderApparatus();
+  renderReadouts();
+  renderStatus();
+});
 elements.voltageDown.addEventListener("click", () => changeVoltage(-1));
 elements.voltageUp.addEventListener("click", () => changeVoltage(1));
 elements.newDrop.addEventListener("click", newDrop);
